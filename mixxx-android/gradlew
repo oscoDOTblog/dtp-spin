@@ -1,0 +1,17 @@
+#!/bin/sh
+# Minimal Gradle bootstrap for mixxx-android.
+# Downloads Gradle 8.7 on first use, then delegates to it.
+# (Replaces the standard wrapper jar to keep this scaffold self-contained.)
+set -e
+GRADLE_VERSION="8.7"
+GRADLE_HOME="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists/gradle-${GRADLE_VERSION}-bin"
+DIST_ZIP="$GRADLE_HOME/gradle-${GRADLE_VERSION}-bin.zip"
+if [ ! -x "$GRADLE_HOME/gradle-${GRADLE_VERSION}/bin/gradle" ]; then
+  mkdir -p "$GRADLE_HOME"
+  if [ ! -f "$DIST_ZIP" ]; then
+    echo "Downloading Gradle ${GRADLE_VERSION}..."
+    curl -L -o "$DIST_ZIP" "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+  fi
+  unzip -q -o "$DIST_ZIP" -d "$GRADLE_HOME"
+fi
+exec "$GRADLE_HOME/gradle-${GRADLE_VERSION}/bin/gradle" "$@"

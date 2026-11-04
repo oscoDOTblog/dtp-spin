@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.mixxx.mobile.engine.TempoMathTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-04T20:16:23" hostname="pop-os" time="0.004">
+  <properties/>
+  <testcase name="syncMatchesLeaderBpm" classname="org.mixxx.mobile.engine.TempoMathTest" time="0.004"/>
+  <testcase name="clampKeepsSliderRange" classname="org.mixxx.mobile.engine.TempoMathTest" time="0.0"/>
+  <testcase name="effectiveBpmScalesWithTempo" classname="org.mixxx.mobile.engine.TempoMathTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
