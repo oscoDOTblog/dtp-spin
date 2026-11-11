@@ -100,11 +100,17 @@ class FakeHost(
     var serviceStarts = 0
     var serviceStops = 0
     var lastImport: List<Uri>? = null
+    var lastFolderImport: Uri? = null
     var released = mutableListOf<String>()
 
     override suspend fun importUris(uris: List<Uri>): ImportResult {
         lastImport = uris
         return ImportResult(uris.size, 0, emptyList())
+    }
+
+    override suspend fun importFolder(treeUri: Uri): ImportResult {
+        lastFolderImport = treeUri
+        return ImportResult(3, 1, emptyList())
     }
 
     override fun feeder(deck: Int): DeckFeeder = feeders[deck]

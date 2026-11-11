@@ -46,6 +46,11 @@ fun DJScreen(viewModel: DJViewModel, modifier: Modifier = Modifier) {
     ) { uris ->
         if (uris.isNotEmpty()) viewModel.importUris(uris)
     }
+    val folderImporter = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { treeUri ->
+        if (treeUri != null) viewModel.importFolder(treeUri)
+    }
 
     LaunchedEffect(ui.message) {
         ui.message?.let {
@@ -88,6 +93,9 @@ fun DJScreen(viewModel: DJViewModel, modifier: Modifier = Modifier) {
                 }
                 Button(onClick = { importer.launch(arrayOf("audio/*")) }) {
                     Text("Import")
+                }
+                Button(onClick = { folderImporter.launch(null) }) {
+                    Text("Import folder")
                 }
             }
 

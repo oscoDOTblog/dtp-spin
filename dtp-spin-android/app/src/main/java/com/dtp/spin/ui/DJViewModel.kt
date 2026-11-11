@@ -19,6 +19,9 @@ import com.dtp.spin.data.TrackLibrary
 import com.dtp.spin.library.ImportResult
 import com.dtp.spin.library.PeakUtils
 import com.dtp.spin.library.TrackImporter
+import com.dtp.spin.library.hasPersistedRead
+import com.dtp.spin.library.listAudioUris
+import com.dtp.spin.library.persistTreePermission
 import com.dtp.spin.playback.AudioFocus
 import com.dtp.spin.playback.PlaybackService
 import com.dtp.spin.util.AudioMath
@@ -76,6 +79,7 @@ interface PlayerHost {
     val library: TrackLibrary
     val sessions: SessionPrefs
     suspend fun importUris(uris: List<Uri>): ImportResult
+    suspend fun importFolder(treeUri: Uri): ImportResult
     fun feeder(deck: Int): DeckFeeder
     fun requestFocus(): Boolean
     fun serviceStart()
@@ -148,12 +152,13 @@ class DJViewModel(private val host: PlayerHost) : ViewModel() {
 
     fun importUris(uris: List<Uri>) {
         viewModelScope.launch {
-            val r = host.importUris(uris)
-            val parts = mutableListOf<String>()
-            if (r.imported > 0) parts += "imported ${r.imported}"
-            if (r.duplicates > 0) parts += "${r.duplicates} already in library"
-            r.failures.forEach { parts += it.second }
-            say(if (parts.isEmpty()) "nothing to import" else parts.joinToString(" • "))
+            say(describe(host.importUris(uris)))
+        }
+    }
+
+    fun importFolder(treeUri: Uri) {
+        viewModelScope.launch {
+            say(describe(host.importFolder(treeUri)))
         }
     }
 
@@ -431,6 +436,14 @@ class DJViewModel(private val host: PlayerHost) : ViewModel() {
         _message.value = UiMessage(text, ++messageSeq)
     }
 
+    private fun describe(r: ImportResult): String {
+        val parts = mutableListOf<String>()
+        if (r.imported > 0) parts += "imported ${r.imported}"
+        if (r.duplicates > 0) parts += "${r.duplicates} already in library"
+        r.failures.forEach { parts += it.second }
+        return if (parts.isEmpty()) "nothing to import" else parts.joinToString(" • ")
+    }
+
     override fun onCleared() {
         saveJob?.cancel()
         host.feeder(0).stop()
@@ -466,6 +479,16 @@ class AppPlayerHost(private val app: DJApplication) : PlayerHost {
         TrackImporter(app.applicationContext, app.trackRepository, app.appScope)
             .importUris(uris)
 
+    override suspend fun importFolder(treeUri: Uri): ImportResult {
+        val ctx = app.applicationContext
+        persistTreePermission(ctx, treeUri)
+        val uris = listAudioUris(ctx, treeUri)
+        if (uris.isEmpty()) {
+            return ImportResult(0, 0, listOf(treeUri to "no audio files found in this folder"))
+        }
+        return TrackImporter(ctx, app.trackRepository, app.appScope).importUris(uris)
+    }
+
     override fun feeder(deck: Int): DeckFeeder = feeders[deck]
 
     override fun requestFocus(): Boolean =
@@ -479,9 +502,7 @@ class AppPlayerHost(private val app: DJApplication) : PlayerHost {
     override fun serviceStop() = PlaybackService.stop(app.applicationContext)
 
     override fun hasReadPermission(uriString: String): Boolean =
-        app.contentResolver.persistedUriPermissions.any {
-            it.uri.toString() == uriString && it.isReadPermission
-        }
+        hasPersistedRead(app.applicationContext, uriString)
 
     override fun releasePermission(uriString: String) {
         app.contentResolver.persistedUriPermissions

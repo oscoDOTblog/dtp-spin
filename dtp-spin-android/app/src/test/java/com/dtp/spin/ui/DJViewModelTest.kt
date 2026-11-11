@@ -259,4 +259,17 @@ class DJViewModelTest {
         assertEquals(listOf(1L), host.library.deleted)
         assertEquals(listOf(t1.uri), host.released)
     }
+
+    @Test
+    fun importUris_empty_reportsNothingToImport() = runTest {
+        val host = FakeHost()
+        val vm = DJViewModel(host)
+        advanceUntilIdle()
+
+        vm.importUris(emptyList())
+        advanceUntilIdle()
+
+        assertEquals(emptyList<android.net.Uri>(), host.lastImport)
+        assertEquals("nothing to import", vm.uiState.value.message?.text)
+    }
 }
